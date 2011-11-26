@@ -1,5 +1,5 @@
 /*
- * Scrollimate 0.0.1 - A Jquery Scrolling Animation Plugin
+ * Scrollimate 0.0.2 - A Jquery Scrolling Animation Plugin
  *
  * Author: Jacob Lowe (redeyeoperations.com)
  * Twitter Handle @jacoblowe2dot0
@@ -11,6 +11,7 @@
  * 
  * Built for jQuery library
  * http://jquery.com
+ * TODO: Add resize listener to resize window 
  *
  */
 
@@ -119,7 +120,12 @@
               //Setting state for elements
               if(typeof(data[z].state) === 'undefined'){
                 //Starting as true to fix css if scrolled down the page already on load
-                data[z].state =true;
+                data[z].state = true;
+              }
+              //Setting orientation above or below
+              if(typeof(data[z].orientation) === 'undefined'){
+                //Set orientation state start as null
+                data[z].orientation = null;
               }
               //Check if it in the right area
               if(scrollTop > data[z].param.start && scrollTop < data[z].param.end){
@@ -128,25 +134,32 @@
                   // Let start moving our element
                   move(z, scrollTop);
                   data[z].state = true;
+                  data[z].orientation = null;
                 }else{
                   //Lets define that change object
                   //parse.params(y);
                 }
               //close if
-              }else if (scrollTop < data[z].param.start && data[z].state){
+              }else if (scrollTop < data[z].param.start){
+                if(data[z].state || data[z].orientation === 'below'){
                   $('.scrollimate-' + z).css(data[z].start);
                   //If callback is defined then lets call it
                   if(typeof(data[z].settings.start) === 'function'){
                       data[z].settings.start();
                   }
                   data[z].state = false;
-              }else if (scrollTop > data[z].param.end && data[z].state){
+                  data[z].orientation = 'above';
+                }
+              }else if (scrollTop > data[z].param.end){
+                if(data[z].state || data[z].orientation === 'above'){
                   $('.scrollimate-' + z).css(data[z].end);
                   //If callback is defined then lets call it
                   if(typeof(data[z].settings.end) === 'function'){
                       data[z].settings.end();
                   }
                   data[z].state = false;
+                  data[z].orientation = 'below';
+                }
               }
           // Close for loop
           }
