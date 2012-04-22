@@ -39,13 +39,13 @@
           }
         },
         count = [],
-        type, calc, y, sk, ek, ele
+        calc, y, sk, ek, ele,
         parse = {
             params : function(i){
                 //define the chang object literal
-                data[i].change = {}
+                data[i].change = {};
                 // Calculate the amount of pixels in scroll area
-                calc = data[i].param.end - data[i].param.start
+                calc = data[i].param.end - data[i].param.start;
                 //Add data to global data
                 data[i].change.scroll = calc;
                 //Now lets get the amount of change between each key
@@ -183,7 +183,7 @@
           // Close for loop
           }
         // Close handle
-        }
+        };
     // Adding scrollimate to jquery scope
     $.fn.scrollimate = function (param, start, end, settings) {
         //defining element
@@ -199,18 +199,18 @@
             start :        (typeof start === 'object') ? start : {},
             end :         (typeof end === 'object') ? end : {},
             settings :   (typeof settings === 'object') ? settings : {}
-        }
+        };
         // Intial setup
         parse.params(count.length);
         //Lets count elements
         count.push(0);
         // return ele for chaining
         return ele;
-    }
+    };
     //scroll event listener
     $(window).scroll(function(){
         // Throw scrolltop into handle
         handle($(this).scrollTop());
     });
-}(jQuery))
+}(jQuery));
 
