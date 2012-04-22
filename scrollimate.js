@@ -79,24 +79,43 @@
                 }
                 
             },
+            units : function(value, modifier){
+              var supported = ['px', 'em', '%', 'pt'],
+                i = 0,
+                notFound = true;
+              while(i < supported.length && notFound){
+                if(RegExp(supported[i], 'gi').test(value)){
+                  //We have found our suffix
+                  //Lets strip to the intergers and add the modifier
+                  value = parseFloat(value);
+                  //TODO test for exact unit so that we can handle advanced case
+                  value = value + modifier + supported[i];
+                  //stop our while loop
+                  notFound = false;
+                }
+                i += 1;
+              }
+              //Check if we even found a unit if not just add
+              return (notFound) ? parseFloat(value) + modifier : value;
+            },
             //Checking amount of chang then applying to values
             change : function(i, scrollTop){
               //Defining percent
-              var percent, arr = {}, keys = utils.getKeys(data[i].change.css), offset;
+              var percent, obj = {}, keys = utils.getKeys(data[i].change.css), offset;
               //Get position realtive to scroll area
               calc = scrollTop - data[i].param.start;
               // Find percent of scroll area
               percent = calc / data[i].change.scroll;
-              // loop through values and store in arr
+              // loop through values and store in obj
               for (y=0;y < utils.size(data[i].change.css); y += 1){
                   //Calculate the offset relative to entire change
                   offset = data[i].change.css[keys[y]] * percent;
-                  // get right percent of value and push to arr
-                  calc = parseFloat(data[i].start[keys[y]]) + offset;
-                  arr[keys[y]] = calc;
+                  // get right percent of value and push to obj
+                  calc = parse.units(data[i].start[keys[y]], offset);
+                  obj[keys[y]] = calc;
               }
-              //return arr for usage in move
-              return arr;
+              //return object for usage in move
+              return obj;
                 
             }
         },
@@ -145,7 +164,7 @@
                   $('.scrollimate-' + z).css(data[z].start);
                   //If callback is defined then lets call it
                   if(typeof(data[z].settings.start) === 'function'){
-                      data[z].settings.start();
+                      data[z].settings.start(z);
                   }
                   data[z].state = false;
                   data[z].orientation = 'above';
@@ -155,7 +174,7 @@
                   $('.scrollimate-' + z).css(data[z].end);
                   //If callback is defined then lets call it
                   if(typeof(data[z].settings.end) === 'function'){
-                      data[z].settings.end();
+                      data[z].settings.end(z);
                   }
                   data[z].state = false;
                   data[z].orientation = 'below';
