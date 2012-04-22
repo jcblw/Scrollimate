@@ -15,10 +15,37 @@ Scrolimate has three required parameters. First is the hot spots, this is a star
         },
         // The CSS property to tranform FROM
         {
-            opacity: 0       
+            opacity: 0,
+            width: '0%',
+            height: '20px'
         },
         // The CSS property to tranform TO
         {
             opacity:1
-        });
+            width: '100%',
+            height: '20px'
+        },
+        {
+            start: function(){
+                alert('I started scrollimating');
+            },
+            end: function(){
+                alert('Im done scrollimating');
+            }
+        }
+        );
+        
+##TODO - Feature-list
+
+_Advanced units_
+
+Eg. Using CSS rotate, box shadow, borders , and maybe even rgb and hsl
+
+_Parent-Scroll_
+
+Right now its always based off of window being scroll i think it could be nice if there was a way delegate the scroll tracking to specific elements as well.
+
+
+
+
 
