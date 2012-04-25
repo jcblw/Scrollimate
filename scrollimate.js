@@ -1,5 +1,5 @@
 /*
- * Scrollimate 0.0.2 - A Jquery Scrolling Animation Plugin
+ * Scrollimate 0.0.3 - A Jquery Scrolling Animation Plugin
  *
  * Author: Jacob Lowe (redeyeoperations.com)
  * Twitter Handle @jacoblowe2dot0
@@ -79,17 +79,38 @@
                 }
                 
             },
+            // Need to create an abstract for unit type
+            //then save to to data structure
             units : function(value, modifier){
-              var supported = ['px', 'em', '%', 'pt'],
+              var supported = ['px', 'em', '%', 'pt', '\\('],
                 i = 0,
                 notFound = true;
               while(i < supported.length && notFound){
                 if(RegExp(supported[i], 'gi').test(value)){
-                  //We have found our suffix
-                  //Lets strip to the intergers and add the modifier
-                  value = parseFloat(value);
-                  //TODO test for exact unit so that we can handle advanced case
-                  value = value + modifier + supported[i];
+                  //We have found a supported unit
+                  
+                  // Found bracketed values
+                  // TODO : Now since we have a function to split up intergerd in a brakets
+                  // Now I need to make it into a multi functional split so i can split then
+                  // calculate every interger individually.
+                  if(i >= 4){
+
+                    //Split apart at brackets
+                    value = value.split(/[\(\)]/gi)[1].split(',');
+                    //Todo we need to save the first value of the first split
+                    //so we can attach it again
+
+                  }
+                  else{
+
+                    //Lets strip to the intergers and add the modifier
+                    value = parseFloat(value);
+                    //TODO test for exact unit so that we can handle advanced case
+
+                    value = value + modifier + supported[i];
+
+                  }
+  
                   //stop our while loop
                   notFound = false;
                 }
@@ -111,7 +132,7 @@
                   //Calculate the offset relative to entire change
                   offset = data[i].change.css[keys[y]] * percent;
                   // get right percent of value and push to obj
-                  calc = parse.units(data[i].start[keys[y]], offset);
+                  calc = parse.units(data[i].start[keys[y]], offset, 'sum');
                   obj[keys[y]] = calc;
               }
               //return object for usage in move
