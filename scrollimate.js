@@ -1,5 +1,5 @@
 /*
- * Scrollimate 0.0.3 - A Jquery Scrolling Animation Plugin
+ * Scrollimate 0.1.2 - A Jquery Scrolling Animation Plugin
  *
  * Author: Jacob Lowe (redeyeoperations.com)
  * Twitter Handle @jacoblowe2dot0
@@ -40,6 +40,57 @@
         },
         count = [],
         calc, y, sk, ek, ele,
+        //TODO Combine change and offset into one method
+        calculate = {
+          //Abstract change
+          change : function(i ,key){
+
+            //Get units of keys (start v. end)
+            //In more addvanced cases there need to a parser that will get out differnt values of key values to compare change
+            var start = parse.units(i, key, 'start'),
+              end = parse.units(i, key, 'end'), n, res;
+
+            //If unit is a bracketed unit
+            if(typeof start === 'object' && typeof end === 'object'){
+                n = 0;
+                res = [];
+                //Loop through all values
+                while( n < start.length){
+                  res.push((start[n] - end[n]) * (-1));
+                  n += 1;
+                }
+            }
+            //If unit is a suffix or number
+            else{
+              res = (start - end) * (-1);
+            }
+
+            //push data to global data for future use
+            data[i].change.css[key] = res;
+
+          },
+          offset : function(i, key, percent){
+
+            var start = data[i].change.css[key], res;
+
+            if(typeof start === 'object'){
+                n = 0;
+                res = [];
+                //Loop through all values
+                while( n < start.length){
+                  res.push(start[n] * percent);
+                  n += 1;
+                }
+            }
+            //If unit is a suffix or number
+            else{
+              res = start * percent;
+            }
+
+            return res;
+
+          }
+        },
         parse = {
             params : function(i){
                 //define the chang object literal
@@ -58,66 +109,123 @@
                 ek = utils.getKeys(data[i].end);
                 //loop through all start keys
                 for(y =0; y < sk.length; y += 1){
-                  if($.inArray(sk[y], ek) > -1){
-                    //key match found
-                    //Get units of keys (start v. end)
-                    //In more addvanced cases there need to a parser that will get out differnt values of key values to compare change
-                    calc = parseFloat(data[i].start[sk[y]]) - parseFloat(data[i].end[sk[y]]);
-                    //push data to global data
-                    data[i].change.css[sk[y]] = calc * -1;
-                  }else{
-                    //Test to see if original css is differnt from start key
-                    if(ele.css(sk[y]) !== data[i].start[sk[y]]){
-                      // If is differnt find differnce
-                      calc = parseFloat(data[i].start[sk[y]]) - parseFloat(ele.css(sk[y]));
-                      //push data to global data object
-                      //data[i].param[sk[y]] = calc;
-                    }
-                  // Close else
-                  }
+                  
+                    calculate.change(i, sk[y]);
+                  
                 //Close for
                 }
                 
             },
             // Need to create an abstract for unit type
             //then save to to data structure
-            units : function(value, modifier){
-              var supported = ['px', 'em', '%', 'pt', '\\('],
+            units : function(n, key, type){
+
+              //Array of supported units first is suffix second is bracketed values 
+              var supported = [/^\-*\.*[0-9]+\.*[0-9]*(%|[a-z]+)+/, /[a-z]+[A-Z]*\(( ?\-*[0-9]?.?[0-9]+,*[a-z]* ?)+\)/],
+                //Actual Value
+                value = data[n][type][key],
+                //Interger to iterate
                 i = 0,
+                //A flag to stop while loop
                 notFound = true;
+              // Loop through all supprted values until find
               while(i < supported.length && notFound){
-                if(RegExp(supported[i], 'gi').test(value)){
+                // Test for support
+                if(supported[i].test(value)){
                   //We have found a supported unit
+                  //Lets make a unit and format
+                  if(typeof data[n].unit === 'undefined' && typeof data[n].format === 'undefined'){
+                    data[n].unit = {};
+                    data[n].format = {};
+                  }
                   
                   // Found bracketed values
                   // TODO : Now since we have a function to split up intergerd in a brakets
                   // Now I need to make it into a multi functional split so i can split then
                   // calculate every interger individually.
-                  if(i >= 4){
+                  if(i >= 1){
+
+                    var pre, suf;
 
                     //Split apart at brackets
-                    value = value.split(/[\(\)]/gi)[1].split(',');
-                    //Todo we need to save the first value of the first split
-                    //so we can attach it again
+                    value = value.split(/[\(\)]/g);
+
+                    pre = value[0];
+
+                    // Split apart values
+                    value = value[1].split(',');
+
+                    if(value.length === 1){
+                      // Store unit
+                      if(typeof data[n].unit[key] === 'undefined' && typeof data[n].format[key] === 'undefined'){
+                        suf = value[0].match(/[a-z]+/)[0];
+                        data[n].unit[key] = [pre, suf];
+                        //Bracketed Suffix
+                        data[n].format[key] = 'bs';
+                      }
+
+                      value = value[0].split(/[a-z]+/);
+                      value = parseFloat(value[0]);
+       
+                    }else{
+                      var q = 0;
+
+                      if(typeof data[n].unit[key] === 'undefined' && typeof data[n].format[key] === 'undefined'){
+                        data[n].unit[key] = pre;
+                        //Bracketed
+                        data[n].format[key] = 'b';
+                      }
+
+                      while(q < value.length){
+                        value[q] = parseFloat(value[q]);
+                        q += 1;
+                      }
+
+                    }
+
 
                   }
                   else{
 
                     //Lets strip to the intergers and add the modifier
-                    value = parseFloat(value);
+                    calc = parseFloat(value);
                     //TODO test for exact unit so that we can handle advanced case
+                    //Lets push our unit & format into our data
+                    if(typeof data[n].unit[key] === 'undefined' && typeof data[n].format[key] === 'undefined'){
+                      data[n].unit[key] = value.replace(calc, '');
+                      data[n].format[key] = 's';
+                    }
 
-                    value = value + modifier + supported[i];
+                    //Set the value
+                    value = calc;
 
                   }
+
+                  //build raw data
+                  if(typeof data[n].raw === 'undefined'){
+                    data[n].raw = {};
+                  }
+                  //build raw type
+                  if(typeof data[n].raw[type] === 'undefined'){
+                    data[n].raw[type] = {};
+                  }
+                  // Store raw data
+                  data[n].raw[type][key] = data[n][type][key];
+
+                  //Let just store the value in this nice format
+                  data[n][type][key] = value;
   
                   //stop our while loop
                   notFound = false;
                 }
+
                 i += 1;
+
               }
-              //Check if we even found a unit if not just add
-              return (notFound) ? parseFloat(value) + modifier : value;
+
+              //Check if we even found a unit if not just add 
+              return (notFound) ? parseFloat(value) : value;
+
             },
             //Checking amount of chang then applying to values
             change : function(i, scrollTop){
@@ -127,12 +235,59 @@
               calc = scrollTop - data[i].param.start;
               // Find percent of scroll area
               percent = calc / data[i].change.scroll;
+
               // loop through values and store in obj
               for (y=0;y < utils.size(data[i].change.css); y += 1){
                   //Calculate the offset relative to entire change
-                  offset = data[i].change.css[keys[y]] * percent;
-                  // get right percent of value and push to obj
-                  calc = parse.units(data[i].start[keys[y]], offset, 'sum');
+                  offset = calculate.offset(i, keys[y], percent);
+
+                  
+                  //Let make out css obj
+                  //Finde out how to format result
+                  if(typeof data[i].format === 'undefined'){
+                    //Normal result
+                    calc = data[i].start[keys[y]] + offset;
+
+                  }else{
+          
+                    switch(data[i].format[keys[y]]){
+                      //Bracketed Value
+                      case 'b' : 
+
+                        var n = 0;
+                        calc = [];
+
+                        while(n < offset.length){
+                          if(n === 3){
+                            calc.push(data[i].start[keys[y]][n] + offset[n]);
+                          }else{
+                            calc.push( Math.round(data[i].start[keys[y]][n] + offset[n]));
+                          }
+
+                          n += 1;
+                        } 
+                        //Need to a suffix to end
+                        calc = data[i].unit[keys[y]] + '(' + calc.join(',') + ')';
+                        break;
+                      // Is a bracketed value with a suffix
+                      case 'bs' : 
+                        calc = data[i].unit[keys[y]][0] + '(' + (data[i].start[keys[y]] + offset) + data[i].unit[keys[y]][1] + ')';
+                        break;
+                      // Value with a suffix
+                      case 's' :
+                        // Normal Interger
+                        calc = (data[i].start[keys[y]] + offset) + data[i].unit[keys[y]];
+                        break;
+
+                      default :
+
+                        calc = data[i].start[keys[y]] + offset;
+                        break;
+
+                    }
+            
+                  }
+                  
                   obj[keys[y]] = calc;
               }
               //return object for usage in move
@@ -142,13 +297,9 @@
         },
         move = function(i, scrollTop){
           // Defing change and also another int to avois conflicts
-          var change = parse.change(i, scrollTop), p, keys = utils.getKeys(data[i].start), css = {};
-          //loop through all values
-          for(p = 0; p < utils.size(data[i].start); p += 1){
-              css[keys[p]] = change[keys[p]];
-          }
-          //console.log(css);
-          $('.scrollimate-' + i).css(css);
+          var change = parse.change(i, scrollTop);
+
+          $('.scrollimate-' + i).css(change);
             
         },
         handle = function (scrollTop) {
@@ -182,7 +333,7 @@
               //close if
               }else if (scrollTop < data[z].param.start){
                 if(data[z].state || data[z].orientation === 'below'){
-                  $('.scrollimate-' + z).css(data[z].start);
+                  $('.scrollimate-' + z).css((typeof data[z].raw === 'undefined') ? data[z].start : data[z].raw.start);
                   //If callback is defined then lets call it
                   if(typeof(data[z].settings.start) === 'function'){
                       data[z].settings.start(z);
@@ -192,7 +343,7 @@
                 }
               }else if (scrollTop > data[z].param.end){
                 if(data[z].state || data[z].orientation === 'above'){
-                  $('.scrollimate-' + z).css(data[z].end);
+                  $('.scrollimate-' + z).css((typeof data[z].raw === 'undefined') ? data[z].end : data[z].raw.end);
                   //If callback is defined then lets call it
                   if(typeof(data[z].settings.end) === 'function'){
                       data[z].settings.end(z);
@@ -232,6 +383,7 @@
     $(window).scroll(function(){
         // Throw scrolltop into handle
         handle($(this).scrollTop());
+
     });
 }(jQuery));
 
